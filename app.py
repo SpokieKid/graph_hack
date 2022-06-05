@@ -108,7 +108,7 @@ st.markdown(df.to_markdown())
 def fetch_user(subgraph, user_address):
     print(subgraph)
     latest_swaps = subgraph.Query.swaps(
-        where=[subgraph.Swap.from = user_address],
+        where=[subgraph.Swap.from == Variable('user_address')],
         orderBy=subgraph.Swap.timestamp,
         orderDirection="desc",
         first=100,
