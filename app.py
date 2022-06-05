@@ -105,33 +105,36 @@ df = df.sort_values(by=["time"], ascending=False)
 data_loading.text(f"[Every {REFRESH_INTERVAL_SEC} seconds] Loading data... done!")
 st.markdown(df.to_markdown())
 
-def fetch_user(subgraph, user_address):
-    print(subgraph)
-    latest_swaps = subgraph.Query.swaps(
-        where=[subgraph.Swap.from == Variable('user_address')],
-        orderBy=subgraph.Swap.timestamp,
-        orderDirection="desc",
-        first=100,
-    )
-    df = df.rename(columns=lambda x: x[len("swaps_") :])
-    df["time"] = df["timestamp"].apply(
-        lambda x: datetime.fromtimestamp(x).strftime("%H:%M:%S")
-    )
-    df["dex"] = df["protocol_name"]
-    df["network"] = df["protocol_network"]
+swaps = Query.swaps(
+    where=[Swap.from == Variable(user_address)]
+    orderBy=Swap.timestamp,
+    orderDirection="desc",
+    first=10
+)
 
-    df["amountInUSD"] = df["amountInUSD"].map("{:,.2f}".format)
-    df["amountOutUSD"] = df["amountOutUSD"].map("{:,.2f}".format)
-    df["swap"] = df.apply(
-        lambda x: f"""\${x["amountInUSD"]} {x["tokenIn_symbol"]} 💸 \${x["amountOutUSD"]} {x["tokenOut_symbol"]}""",
-        axis=1,
-    )
-    df["txn"] = df.apply(
-        lambda x: f"""[🔗](https://polygonscan.com/tx/{x["hash"]})""",
-        axis=1,
-    )
-    return df[["time", "dex", "network", "swap", "txn"]]
+req_template = sg.mk_request([
+  swaps.timestamp, 
+  swaps.amountInUSD
+])
 
-user_address = st.text_input("Enter user address", key="user_address")
-user_data = fetech_user(subgraphs[networks], user_address)
-st.markdown(user_data.to_markdown())
+input_address = st.text_input("Enter your address", key="input_address")
+actual_req = req_template(user_address=input_address)
+
+# def fetch_user(subgraph, user_address):
+#     print(subgraph)
+#     latest_swaps = subgraph.Query.swaps(
+#         where=[subgraph.Swap.from == Variable('user_address')],
+#         orderBy=subgraph.Swap.timestamp,
+#         orderDirection="desc",
+#         first=100,
+#     )
+    
+# req_template = sg.mk_request([
+#   swaps.timestamp
+# ])
+
+# user_address = st.text_input("Enter user address", key="user_address")
+# actual_req = req_template(user_address)
+# data = sg.execute(actual_req)
+# user_data = fetech_user(subgraphs[networks], user_address)
+# st.markdown(user_data.to_markdown())
